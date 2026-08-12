@@ -1,0 +1,26 @@
+# 환경/시크릿
+.env
+venv/
+__pycache__/
+*.pyc
+
+# 대용량 데이터 (Kaggle에서 직접 받도록, 저장소에는 안 올림)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# 학습된 모델/벡터DB (용량 크면 Git LFS 검토, 우선 제외)
+models/*
+!models/.gitkeep
+vectorstore/*
+!vectorstore/.gitkeep
+
+# KOSHA 원문 (저작권/용량 이슈로 제외, 다운로드 스크립트만 커밋)
+docs/kosha_guides/*
+!docs/kosha_guides/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
