@@ -37,9 +37,11 @@ COLLECTION_NAME = "kosha_guides"
 CHUNK_SIZE = 800     # 청크 하나의 글자 수 (한국어 기준, 문단 몇 개 정도의 분량)
 CHUNK_OVERLAP = 150  # 청크 간 겹치는 글자 수 (문장이 청크 경계에서 잘려 문맥이 끊기는 걸 완화)
 
-# KOSHA 공식 코드는 "P-101-2021"처럼 카테고리-번호-연도 형식이라, 코드 자체에서
-# 연도(마지막 4자리)를 뽑아낸다. 파일명 규칙: "코드_제목.pdf"
-FILENAME_PATTERN = re.compile(r"^(?P<code>[A-Za-z]+-\d+-(?P<year>\d{4}))_(?P<title>.+)$")
+# KOSHA 포털에서 실제로 다운로드되는 파일명은 "C-C-1-2025 인화성 액체 및 기체
+# 잔류물이 있는 탱크의...규정.pdf"처럼 코드(대시로 구분된 여러 세그먼트, 마지막이
+# 4자리 연도) + 띄어쓰기 + 제목 형식이다. 코드 세그먼트 개수가 지침마다 다를 수
+# 있어서(P-101-2021처럼 3세그먼트, C-C-1-2025처럼 4세그먼트 등) 유연하게 매칭한다.
+FILENAME_PATTERN = re.compile(r"^(?P<code>[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*-(?P<year>\d{4}))\s+(?P<title>.+)$")
 
 
 class ChromaDefaultEmbeddings(Embeddings):
@@ -54,10 +56,13 @@ class ChromaDefaultEmbeddings(Embeddings):
         self._fn = embedding_functions.DefaultEmbeddingFunction()
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        return [list(v) for v in self._fn(texts)]
+        # chromadb 기본 임베딩 함수는 numpy.float32로 값을 반환하는데,
+        # chromadb의 query() 쪽 타입 검증은 순수 파이썬 float만 허용해서
+        # 명시적으로 float()로 캐스팅해줘야 한다 (안 그러면 검색 시 ValueError)
+        return [[float(x) for x in v] for v in self._fn(texts)]
 
     def embed_query(self, text: str) -> list[float]:
-        return list(self._fn([text])[0])
+        return [float(x) for x in self._fn([text])[0]]
 
 
 def parse_metadata_from_filename(filename: str) -> dict:
@@ -70,7 +75,9 @@ def parse_metadata_from_filename(filename: str) -> dict:
 
 
 def build_vectorstore():
-    pdf_paths = sorted(glob.glob(os.path.join(KOSHA_DIR, "*.pdf")))
+    # docs/kosha_guides 바로 아래뿐 아니라 하위 폴더(예: "[2025] 기술지원규정(화학안전분야)/")
+    # 안에 있는 PDF까지 다 찾도록 recursive=True + "**" 패턴 사용
+    pdf_paths = sorted(glob.glob(os.path.join(KOSHA_DIR, "**", "*.pdf"), recursive=True))
     if not pdf_paths:
         print(f"{KOSHA_DIR} 안에 PDF가 없습니다. 먼저 KOSHA GUIDE PDF를 넣어주세요.")
         return
