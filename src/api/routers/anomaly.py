@@ -86,7 +86,17 @@ def anomaly_check(req: AnomalyCheckRequest, db: Session = Depends(get_db)):
         fault_number = int(_state["fault_clf"].predict(scaled_feat)[0])
 
     # 센서 로그 + 결함 이력 DB 기록 (기획서 3-4: "DB: MySQL (센서 로그, 결함 이력)")
-    db.add(SensorLog(is_anomaly=is_anomaly, fault_number=fault_number, confidence=confidence))
+    # window의 마지막 시점(가장 최근 값)만 저장 — 대시보드의 설비별 그래프는
+    # "지금 이 순간의 센서 값이 어떻게 변해왔는지"를 보여주려는 목적이라
+    # 윈도우 전체(10개 시점)를 다 저장할 필요는 없다.
+    db.add(
+        SensorLog(
+            is_anomaly=is_anomaly,
+            fault_number=fault_number,
+            confidence=confidence,
+            sensor_values=json.dumps(req.window[-1]),
+        )
+    )
     db.commit()
 
     return AnomalyCheckResponse(is_anomaly=is_anomaly, fault_number=fault_number, confidence=confidence)

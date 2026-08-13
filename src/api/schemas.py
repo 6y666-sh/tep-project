@@ -43,6 +43,13 @@ class SensorLogItem(BaseModel):
     is_anomaly: bool
     fault_number: int | None
     confidence: float
+    # xmeas_1..41 + xmv_1..11 값(52개)을 JSON 문자열로 그대로 전달.
+    # 굳이 list[float]로 파싱해서 응답하지 않는 이유: 이 필드는 프론트의 설비별
+    # 그래프에서만 쓰이고, 서버가 값의 의미를 해석할 일이 없어서 그대로 통과시키는 게
+    # 더 단순하다(파싱 책임을 실제로 값을 쓰는 쪽인 프론트로 넘김).
+    sensor_values: str | None = None
+    resolved: bool = False
+    resolved_at: datetime | None = None
 
     class Config:
         from_attributes = True  # SQLAlchemy 모델 객체를 그대로 넣을 수 있게 함
@@ -54,6 +61,7 @@ class GuideRequestLogItem(BaseModel):
     fault_description: str
     guide_confidence: str
     reference_count: int
+    guide_text: str | None = None
 
     class Config:
         from_attributes = True

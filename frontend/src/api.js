@@ -36,3 +36,7 @@ export function listSensorLogs(limit = 50) {
 export function listGuideLogs(limit = 50) {
   return request(`/guide-logs?limit=${limit}`);
 }
+
+export function resolveSensorLog(id) {
+  return request(`/sensor-logs/${id}/resolve`, { method: "POST" });
+}

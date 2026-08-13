@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { listGuideLogs, listSensorLogs } from "../api.js";
+import { faultLabel } from "../faultNames.js";
 
 function formatTime(iso) {
   return new Date(iso).toLocaleString("ko-KR");
@@ -32,7 +33,7 @@ export default function HistoryDashboard() {
   const anomalyCount = sensorLogs.filter((l) => l.is_anomaly).length;
 
   return (
-    <div className="panel">
+    <div className="card">
       <h2>이력 대시보드</h2>
       <div className="row">
         <button onClick={load}>새로고침</button>
@@ -77,7 +78,7 @@ export default function HistoryDashboard() {
                       {log.is_anomaly ? "이상" : "정상"}
                     </span>
                   </td>
-                  <td>{log.fault_number ?? "-"}</td>
+                  <td>{faultLabel(log.fault_number)}</td>
                   <td>{(log.confidence * 100).toFixed(1)}%</td>
                 </tr>
               ))}

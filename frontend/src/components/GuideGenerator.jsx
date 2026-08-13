@@ -29,7 +29,7 @@ export default function GuideGenerator() {
   };
 
   return (
-    <div className="panel">
+    <div className="card">
       <h2>조치가이드 생성</h2>
       <p className="hint">
         결함 상황을 문장으로 설명하면, KOSHA GUIDE에서 관련 지침을 검색해 조치가이드를 생성합니다.

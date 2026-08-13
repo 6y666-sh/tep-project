@@ -26,6 +26,7 @@ def get_guide(req: GetGuideRequest, db: Session = Depends(get_db)):
         fault_description=req.fault_description,
         guide_confidence=result["confidence"],
         reference_count=len(result["reference_docs"]),
+        guide_text=result["guide_text"],
     ))
     db.commit()
 
