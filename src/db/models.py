@@ -28,6 +28,7 @@ class GuideRequestLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    fault_description = Column(String, nullable=False)
-    guide_confidence = Column(String, nullable=False)  # "low" / "high"
+    # MySQL은 VARCHAR에 길이 지정이 필수라 명시함 (SQLite는 없어도 됐지만 MySQL은 에러남)
+    fault_description = Column(String(1000), nullable=False)
+    guide_confidence = Column(String(20), nullable=False)  # "low" / "high"
     reference_count = Column(Integer, nullable=False)
