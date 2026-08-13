@@ -20,6 +20,10 @@ vectorstore/*
 docs/kosha_guides/*
 !docs/kosha_guides/.gitkeep
 
+# 프론트엔드 (설치/빌드 결과물, Docker 빌드 시 다시 생성됨)
+frontend/node_modules/
+frontend/dist/
+
 # IDE
 .vscode/
 .idea/

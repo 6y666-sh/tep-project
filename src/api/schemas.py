@@ -1,5 +1,7 @@
 """API 요청/응답 스키마 (pydantic). 기획서 3-4 출력 스펙과 맞춤."""
 
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -33,3 +35,25 @@ class GetGuideResponse(BaseModel):
     guide_text: str
     reference_docs: list[ReferenceDoc]
     confidence: str  # "low" / "high"
+
+
+class SensorLogItem(BaseModel):
+    id: int
+    created_at: datetime
+    is_anomaly: bool
+    fault_number: int | None
+    confidence: float
+
+    class Config:
+        from_attributes = True  # SQLAlchemy 모델 객체를 그대로 넣을 수 있게 함
+
+
+class GuideRequestLogItem(BaseModel):
+    id: int
+    created_at: datetime
+    fault_description: str
+    guide_confidence: str
+    reference_count: int
+
+    class Config:
+        from_attributes = True

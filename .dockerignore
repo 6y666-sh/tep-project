@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+.git/
+.env
+tep_logs.db
+
+# 원본 데이터/원문 PDF는 배포 서버에 필요 없음 (이미 만들어진 결과물만 필요)
+data/raw/
+data/processed/
+docs/kosha_guides/
+notebooks/
