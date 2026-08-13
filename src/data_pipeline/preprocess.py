@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import joblib
+import os
 from sklearn.preprocessing import StandardScaler
 
 XMEAS_XMV_COLS = [c for c in [f"xmeas_{i}" for i in range(1, 42)] + [f"xmv_{i}" for i in range(1, 12)]]
@@ -78,3 +80,10 @@ if __name__ == "__main__":
              X_train=X_train, y_train=y_train,
              X_test=X_test, y_test=y_test,
              fault_train=fault_train, fault_test=fault_test)
+
+    # scaler를 파일로 저장해두는 이유: 나중에 FastAPI 서버가 실시간 센서 데이터를
+    # 받았을 때, 학습 때와 동일한 평균/표준편차 기준으로 정규화해야 하기 때문.
+    # scaler를 새로 fit하면 안 되고(그러면 기준이 달라짐), 반드시 이 파일을 불러와 재사용해야 함.
+    os.makedirs("models", exist_ok=True)
+    joblib.dump(scaler, "models/scaler.joblib")
+    print("scaler 저장 완료: models/scaler.joblib")
