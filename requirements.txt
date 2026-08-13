@@ -30,12 +30,13 @@ fastapi>=0.110.0
 uvicorn[standard]>=0.29.0
 pydantic>=2.6.0
 
-# ===== DB (5단계 FastAPI 통합 전까지는 불필요, 지금은 주석 처리) =====
-# cryptography가 Rust(cargo) 소스 빌드를 요구해서 설치 실패하는 이슈가 있었음.
-# DB 붙이는 시점(5단계)에 다시 풀고 원인 해결할 것.
-# sqlalchemy>=2.0.0
-# pymysql>=1.1.0
-# cryptography>=42.0.0  # pymysql 인증 플러그인용
+# ===== DB (MySQL) =====
+sqlalchemy>=2.0.0
+# pymysql 대신 mysql-connector-python 사용: MySQL 8.4+에서 mysql_native_password
+# 플러그인이 기본 비활성이라 pymysql+cryptography 조합이 막혔음. mysql-connector-python은
+# 자체 암호화 처리가 내장돼 있어 caching_sha2_password(MySQL 기본 인증)를 별도
+# cryptography 패키지 설치 없이 지원한다.
+mysql-connector-python>=8.3.0
 
 # ===== 문서 전처리 (KOSHA GUIDE PDF/HWP 파싱) =====
 pypdf>=4.0.0

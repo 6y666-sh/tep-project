@@ -68,6 +68,7 @@ def main():
     meta = {
         "threshold": threshold,
         "threshold_percentile": THRESHOLD_PERCENTILE,
+        "min_train_score": float(train_scores.min()),  # API에서 confidence 계산할 때 재사용
         "n_estimators": 200,
         "window_size": 10,
         "stride": 5,
