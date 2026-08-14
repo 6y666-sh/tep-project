@@ -12,12 +12,13 @@ import os
 
 import joblib
 import numpy as np
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from src.api.schemas import AnomalyCheckRequest, AnomalyCheckResponse
 from src.db.models import SensorLog
 from src.db.session import get_db
+from src.orchestration.harness import run_harness_for_log_id
 
 router = APIRouter()
 
@@ -64,7 +65,7 @@ def _score_to_confidence(score: float, threshold: float, min_train_score: float)
 
 
 @router.post("/anomaly-check", response_model=AnomalyCheckResponse)
-def anomaly_check(req: AnomalyCheckRequest, db: Session = Depends(get_db)):
+def anomaly_check(req: AnomalyCheckRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     _load_artifacts()
 
     if not req.window or any(len(row) != EXPECTED_VARS for row in req.window):
@@ -89,14 +90,21 @@ def anomaly_check(req: AnomalyCheckRequest, db: Session = Depends(get_db)):
     # window의 마지막 시점(가장 최근 값)만 저장 — 대시보드의 설비별 그래프는
     # "지금 이 순간의 센서 값이 어떻게 변해왔는지"를 보여주려는 목적이라
     # 윈도우 전체(10개 시점)를 다 저장할 필요는 없다.
-    db.add(
-        SensorLog(
-            is_anomaly=is_anomaly,
-            fault_number=fault_number,
-            confidence=confidence,
-            sensor_values=json.dumps(req.window[-1]),
-        )
+    log = SensorLog(
+        is_anomaly=is_anomaly,
+        fault_number=fault_number,
+        confidence=confidence,
+        sensor_values=json.dumps(req.window[-1]),
+        window_features=json.dumps(raw_feat.reshape(-1).tolist()),
     )
+    db.add(log)
     db.commit()
+    db.refresh(log)
+
+    # 하네스(src/orchestration/harness.py): 이상 감지 시 조치가이드 자동 생성
+    # 여부를 판단한다. 백그라운드로 돌려서 LLM 호출 지연이 이 응답을 늦추지
+    # 않게 한다 — 센서 판정(is_anomaly/fault_number)은 실시간성이 중요하고,
+    # 조치가이드는 몇 초 뒤에 대시보드/알림에 뒤늦게 붙어도 충분하다.
+    background_tasks.add_task(run_harness_for_log_id, log.id)
 
     return AnomalyCheckResponse(is_anomaly=is_anomaly, fault_number=fault_number, confidence=confidence)

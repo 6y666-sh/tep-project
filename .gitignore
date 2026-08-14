@@ -23,6 +23,9 @@ docs/kosha_guides/*
 # 프론트엔드 (설치/빌드 결과물, Docker 빌드 시 다시 생성됨)
 frontend/node_modules/
 frontend/dist/
+# vite가 ESM 설정 파일을 빌드할 때 남기는 임시 파일 (정상적으로는 빌드 후 자동
+# 삭제되지만, 특정 환경에서 정리가 안 되고 계속 쌓이는 걸 여러 번 확인함)
+frontend/vite.config.js.timestamp-*.mjs
 
 # IDE
 .vscode/

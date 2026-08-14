@@ -50,9 +50,31 @@ class SensorLogItem(BaseModel):
     sensor_values: str | None = None
     resolved: bool = False
     resolved_at: datetime | None = None
+    confirmed_fault_number: int | None = None
+    # 하네스가 이 이상 건에 대해 자동으로 만들어준(또는 재사용한) 조치가이드.
+    # guide_request_log_id만 두면 프론트가 또 API를 한 번 더 불러야 해서,
+    # 이력 조회 시점에 아예 내용을 같이 붙여서 내려준다(history.py 참고).
+    guide_request_log_id: int | None = None
+    guide_text: str | None = None
+    guide_confidence: str | None = None
+    guide_reference_count: int | None = None
 
     class Config:
         from_attributes = True  # SQLAlchemy 모델 객체를 그대로 넣을 수 있게 함
+
+
+class ResolveSensorLogRequest(BaseModel):
+    # 0 = 정상(오탐이었음), 1~20 = 실제 결함 번호. 작업자가 상황종료를 누르기 전에
+    # 반드시 골라야 하는 값이라 Optional이 아니라 필수 필드로 둔다.
+    confirmed_fault_number: int = Field(..., ge=0, le=20, description="작업자가 확인한 실제 결함 번호(0=정상/오탐)")
+
+
+class ResolveByFaultRequest(BaseModel):
+    # 모델이 예측한 fault_number 기준으로 "그 결함으로 아직 미해결인 로그 전부"를
+    # 찾아서 한 번에 처리한다 (알림 큐가 결함 유형 단위로 하나의 사고로 묶어서
+    # 보여주기 때문 — 자세한 이유는 history.py의 resolve_sensor_logs_by_fault 참고).
+    fault_number: int = Field(..., description="일괄 처리할 대상, 모델이 예측했던 결함 번호")
+    confirmed_fault_number: int = Field(..., ge=0, le=20, description="작업자가 확인한 실제 결함 번호(0=정상/오탐)")
 
 
 class GuideRequestLogItem(BaseModel):

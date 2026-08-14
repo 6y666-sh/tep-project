@@ -6,6 +6,8 @@ import RoomPlaceholder from "./RoomPlaceholder.jsx";
 import PlantOverview from "./PlantOverview.jsx";
 import EquipmentDetail from "./EquipmentDetail.jsx";
 
+const REFRESH_MS = 5000;
+
 // 화면 단계: 설비실 목록 -> (기능 있는 설비실이면) 전체 공정도 -> 개별 설비 상세.
 // initialSelected는 대시보드에서 특정 설비를 바로 열고 싶을 때 쓰는데, 지금
 // 구조에서는 그 설비가 속한 "기능 있는 설비실"(room-1)로 바로 들어가야 한다.
@@ -15,10 +17,28 @@ export default function EquipmentPage({ initialSelected = null }) {
   const [room, setRoom] = useState(initialSelected ? "room-1" : null);
   const [selectedEquipment, setSelectedEquipment] = useState(initialSelected);
 
+  // 처음 마운트될 때 한 번만 불러오면, 이 화면에 머물러 있는 동안(시뮬레이션이
+  // 돌고 있거나, 다른 곳에서 상황종료를 눌러 resolved가 바뀌어도) 상태등이
+  // 갱신이 안 된다. Dashboard와 같은 방식으로 주기적으로 다시 불러온다.
   useEffect(() => {
-    listSensorLogs(50)
-      .then(setSensorLogs)
-      .catch((e) => setError(e.message));
+    let cancelled = false;
+
+    const load = () => {
+      listSensorLogs(50)
+        .then((rows) => {
+          if (!cancelled) setSensorLogs(rows);
+        })
+        .catch((e) => {
+          if (!cancelled) setError(e.message);
+        });
+    };
+
+    load();
+    const id = setInterval(load, REFRESH_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, []);
 
   if (error) return <div className="error">데이터를 불러오지 못했습니다: {error}</div>;

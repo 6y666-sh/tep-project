@@ -29,14 +29,34 @@ export function getGuide(faultDescription) {
   });
 }
 
-export function listSensorLogs(limit = 50) {
-  return request(`/sensor-logs?limit=${limit}`);
+export function listSensorLogs(limit = 50, sinceDays = null) {
+  const q = sinceDays != null ? `&since_days=${sinceDays}` : "";
+  return request(`/sensor-logs?limit=${limit}${q}`);
+}
+
+// 알림 큐(App.jsx)용: "아직 상황종료 안 한 이상"만, 발생한 순서대로(오래된 것부터)
+// 가져온다. 최신순으로 받아서 프론트에서 뒤집으면 limit에 걸려 잘린 뒷부분(오래된
+// 미해결 건)이 아예 안 보일 수 있어서, 서버에 이 순서 그대로 요청한다.
+export function listUnresolvedAnomalies(limit = 300) {
+  return request(`/sensor-logs?limit=${limit}&unresolved_only=true&oldest_first=true`);
 }
 
 export function listGuideLogs(limit = 50) {
   return request(`/guide-logs?limit=${limit}`);
 }
 
-export function resolveSensorLog(id) {
-  return request(`/sensor-logs/${id}/resolve`, { method: "POST" });
+export function resolveSensorLog(id, confirmedFaultNumber) {
+  return request(`/sensor-logs/${id}/resolve`, {
+    method: "POST",
+    body: JSON.stringify({ confirmed_fault_number: confirmedFaultNumber }),
+  });
+}
+
+// 같은 결함(fault_number)으로 아직 미해결인 로그를 한 번에 전부 처리한다.
+// AlertOverlay가 이걸 쓴다 — 이유는 history.py의 resolve_sensor_logs_by_fault 참고.
+export function resolveSensorLogsByFault(faultNumber, confirmedFaultNumber) {
+  return request(`/sensor-logs/resolve-by-fault`, {
+    method: "POST",
+    body: JSON.stringify({ fault_number: faultNumber, confirmed_fault_number: confirmedFaultNumber }),
+  });
 }

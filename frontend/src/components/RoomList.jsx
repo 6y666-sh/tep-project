@@ -13,8 +13,13 @@ function Clock() {
 }
 
 export default function RoomList({ sensorLogs, onSelect }) {
-  const latest = sensorLogs[0];
-  const hasFault = latest?.is_anomaly && !!faultToEquipmentId(latest.fault_number);
+  // PlantOverview와 같은 이유로 resolved를 체크해야 한다 — sensorLogs[0](가장
+  // 최근 로그) 하나만 보면, 상황종료로 이미 확인 처리한 결함인데도(또는
+  // 시뮬레이션 중 결함 로그 바로 다음이 아직 안 온 상태라면) "아직 이상 상태"로
+  // 잘못 표시될 수 있다. "아직 상황종료 안 한 이상이 있는지"를 최근 로그들
+  // 중에서 찾아야 정확하다.
+  const latestUnresolved = sensorLogs.find((r) => r.is_anomaly && !r.resolved);
+  const hasFault = !!latestUnresolved && !!faultToEquipmentId(latestUnresolved.fault_number);
 
   return (
     <div className="equip-status-grid">

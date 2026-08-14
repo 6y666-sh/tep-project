@@ -57,7 +57,10 @@ body {
   background: none; border: none; font-family: inherit;
 }
 .nav-item.active { background: var(--amber-dim); color: var(--amber); }
-.nav-icon { width: 16px; text-align: center; font-size: 14px; }
+/* lucide-react 라인 아이콘(SVG)은 stroke가 currentColor라 텍스트 색을
+   그대로 따라간다 — 기본은 회색(--text-dim), 선택된 메뉴는 .nav-item.active의
+   amber color를 그대로 물려받아서 별도 필터 없이 무채색/강조색이 자동으로 맞다. */
+.nav-icon { flex-shrink: 0; }
 
 .sidebar-footer { margin-top: auto; padding: 14px 20px 0 20px; border-top: 1px solid var(--line); }
 .plant-select { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 12px; }
@@ -83,10 +86,13 @@ body {
 .badge-live {
   display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--green);
   font-family: 'IBM Plex Mono'; background: rgba(74, 222, 128, 0.1); padding: 5px 10px; border-radius: 20px;
+  border: none; cursor: pointer;
 }
-.badge-live.off { color: var(--red); background: rgba(242, 85, 90, 0.1); }
+.badge-live.off { color: var(--red); background: rgba(242, 85, 90, 0.1); cursor: default; }
+.badge-live.simulating { color: var(--amber); background: var(--amber-dim); }
 .pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 1.6s infinite; }
 .badge-live.off .pulse { background: var(--red); animation: none; }
+.badge-live.simulating .pulse { background: var(--amber); }
 @keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.3 } }
 
 .content { padding: 22px 24px; overflow: auto; }
@@ -126,11 +132,33 @@ body {
 .status-pill.warn { background: rgba(242, 169, 59, 0.14); color: var(--amber); }
 .status-pill.err { background: rgba(242, 85, 90, 0.14); color: var(--red); }
 
+/* FAULT RANKING */
+.rank-list { display: flex; flex-direction: column; gap: 10px; }
+.rank-row { display: flex; align-items: center; gap: 14px; padding: 10px 4px; border-bottom: 1px solid var(--line); }
+.rank-row:last-child { border-bottom: none; }
+.rank-num {
+  width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%; background: var(--panel-2);
+  border: 1px solid var(--line); color: var(--text-dim); font-weight: 700; font-size: 12px;
+  display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono';
+}
+.rank-num.rank-1 { background: var(--amber-dim); border-color: var(--amber); color: var(--amber); }
+.rank-info { flex: 1; min-width: 0; }
+.rank-name { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+.rank-id { font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--text-dim); margin-bottom: 6px; }
+.rank-count { font-family: 'IBM Plex Mono'; font-weight: 700; font-size: 16px; flex-shrink: 0; min-width: 48px; text-align: right; }
+.rank-count .unit { font-size: 11px; color: var(--text-dim); font-weight: 500; margin-left: 2px; }
+
 /* AI PANEL */
 .ai-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin-bottom: 18px; }
 .ai-head { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; background: linear-gradient(180deg, rgba(242, 169, 59, 0.06), transparent); }
 .ai-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 8px var(--amber); }
 .ai-title { font-weight: 700; font-size: 13px; }
+.ai-search-btn {
+  margin-left: auto; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); cursor: pointer;
+  color: var(--text-dim);
+}
+.ai-search-btn:hover { color: var(--amber); border-color: var(--amber); }
 .ai-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
 .msg { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; white-space: pre-wrap; }
 .msg.alert { border-left: 3px solid var(--red); border-radius: 4px 8px 8px 4px; }
@@ -258,19 +286,52 @@ textarea, .code-input {
 }
 .alert-box {
   background: var(--panel); border: 2px solid var(--red); border-radius: 14px;
-  padding: 36px 44px; text-align: center; max-width: 420px;
+  padding: 36px 44px; text-align: center; max-width: 460px;
   box-shadow: 0 0 60px rgba(242, 85, 90, 0.6);
 }
+.alert-guide {
+  text-align: left; background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; max-height: 220px; overflow-y: auto;
+}
+.alert-guide-lbl { font-size: 11px; font-weight: 700; color: var(--amber); margin-bottom: 6px; }
+.alert-guide-text { font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; color: var(--text); }
+.alert-guide-ref { font-size: 10.5px; color: var(--text-dim); margin-top: 8px; font-family: 'IBM Plex Mono'; }
 .alert-icon { font-size: 40px; margin-bottom: 8px; }
 .alert-title { font-size: 20px; font-weight: 800; color: var(--red); margin-bottom: 10px; }
 .alert-fault { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
 .alert-equipment { font-size: 13px; color: var(--text-dim); margin-bottom: 4px; }
-.alert-meta { font-size: 12px; color: var(--text-dim); font-family: 'IBM Plex Mono'; margin-bottom: 20px; }
+.alert-meta { font-size: 12px; color: var(--text-dim); font-family: 'IBM Plex Mono'; margin-bottom: 18px; }
+.alert-confirm { text-align: left; margin-bottom: 14px; }
+.alert-confirm-label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+.alert-confirm select {
+  width: 100%; background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+  border-radius: 8px; padding: 10px; font-size: 13px; font-family: inherit;
+}
 .alert-resolve {
   background: var(--red); color: #fff; border: none; font-weight: 700;
   padding: 12px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; width: 100%;
 }
 .alert-resolve:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* 알림 큐: 지금 처리 중인 사고(alert-box) 옆에 다음 대기 중인 사고를 작고
+   반투명하게 미리 보여준다. 현재 걸 처리하면(App.jsx가 promoting=true를 잠깐
+   켜줌) 이 자리에 있던 게 alert-box-promote 애니메이션과 함께 중앙으로 온다. */
+.alert-stack { display: flex; align-items: center; gap: 26px; }
+.alert-peek {
+  width: 260px; flex-shrink: 0; padding: 22px 24px; text-align: left;
+  background: var(--panel); border: 2px solid var(--red); border-radius: 14px;
+  opacity: 0.62; transform: scale(0.94); pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.alert-peek-label { font-size: 12px; color: var(--text-dim); margin-bottom: 10px; letter-spacing: 0.02em; }
+.alert-peek-fault { font-size: 18px; font-weight: 700; color: var(--red); margin-bottom: 8px; line-height: 1.3; }
+.alert-peek-meta { font-size: 12px; color: var(--text-dim); font-family: 'IBM Plex Mono'; }
+
+.alert-box-promote { animation: alert-promote-in 0.45s ease; }
+@keyframes alert-promote-in {
+  from { transform: translateX(85px) scale(0.9); opacity: 0.5; }
+  to { transform: translateX(0) scale(1); opacity: 1; }
+}
 
 /* 설비실 CCTV 카드 */
 .cctv-feed {

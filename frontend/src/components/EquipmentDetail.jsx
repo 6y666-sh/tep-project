@@ -74,9 +74,12 @@ export default function EquipmentDetail({ equipmentId, sensorLogs, onBack }) {
   const sensorLogsAscending = [...sensorLogs].reverse();
   const allVars = [...equipment.boxes, ...equipment.secondaryVars];
 
-  // "현재 상태"는 가장 최근 판정 하나만 본다. 그게 이상이고, 그 결함이 이
-  // 설비 문제로 매핑되면 위험 배지를 띄운다(설비별 결함 매핑은 faultEquipment.js 참고).
-  const isRelatedFault = latest?.is_anomaly && faultToEquipmentId(latest.fault_number) === equipment.id;
+  // 위험 배지는 "아직 상황종료로 확인 안 한 이상" 기준이어야 한다 (PlantOverview/
+  // RoomList와 동일한 이유 — resolved 체크 없이 latest만 보면, 이미 확인 처리한
+  // 결함도 계속 위험 배지로 남는다). 그래프용 values는 그냥 최신 센서값을 보여주면
+  // 되는 거라 resolved와 무관하게 latest를 그대로 쓴다.
+  const latestUnresolved = sensorLogs.find((l) => l.is_anomaly && !l.resolved);
+  const isRelatedFault = !!latestUnresolved && faultToEquipmentId(latestUnresolved.fault_number) === equipment.id;
 
   return (
     <div className="card">
@@ -92,7 +95,7 @@ export default function EquipmentDetail({ equipmentId, sensorLogs, onBack }) {
 
       {isRelatedFault ? (
         <div className="equip-status-banner danger">
-          ⚠ 이상 감지 — {faultLabel(latest.fault_number)} (확신도 {(latest.confidence * 100).toFixed(1)}%)
+          ⚠ 이상 감지 — {faultLabel(latestUnresolved.fault_number)} (확신도 {(latestUnresolved.confidence * 100).toFixed(1)}%)
         </div>
       ) : (
         <div className="equip-status-banner ok">✓ 정상 가동 중</div>
