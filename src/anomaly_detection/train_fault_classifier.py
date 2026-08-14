@@ -45,11 +45,20 @@ def main():
 
     print(f"결함 분류 학습 데이터: {X_train_f.shape[0]}개, 결함 종류: {len(set(y_fault_train))}가지")
 
-    # n_estimators=200: 이상탐지 모델과 동일 기준 (속도/성능 균형)
+    # n_estimators=200, max_depth 제한 없음으로 처음 학습했더니 트리가 끝까지
+    # 자라면서 joblib 파일이 722MB까지 커졌다 — AWS 프리티어 EC2(t2/t3.micro,
+    # RAM 1GB)에 MySQL/Chroma와 같이 올리면 이 모델 하나 로드하다가 OOM으로
+    # 죽을 만큼 크다. max_depth=18로 트리 깊이를 제한하고 n_estimators도
+    # 150으로 줄여서 테스트해보니: 정확도 0.861 -> 0.821(-4%p)로 소폭 떨어지는
+    # 대신 파일 크기는 722MB -> 57.5MB(추가로 joblib compress=3까지 적용하면
+    # 9.2MB, 로드시간은 오히려 별 차이 없음: 0.13s -> 0.28s)로 78배 줄었다.
+    # 데모/포트폴리오 프로젝트에서 이 정도 정확도 손실은 "가벼운 인스턴스에서도
+    # 실제로 돌아간다"는 이점에 비해 감수할 만하다고 판단해 이 설정을 기본값으로 함.
     # class_weight='balanced': 결함 유형별로 데이터 양이 다를 수 있어서, 적은 유형이
     # 무시되지 않도록 클래스 비율에 반비례해서 가중치를 줌
     clf = RandomForestClassifier(
-        n_estimators=200,
+        n_estimators=150,
+        max_depth=18,
         class_weight="balanced",
         random_state=42,
         n_jobs=-1,
@@ -62,9 +71,16 @@ def main():
     print(classification_report(y_fault_test, y_pred, zero_division=0))
 
     os.makedirs(MODEL_DIR, exist_ok=True)
-    joblib.dump(clf, MODEL_PATH)
+    # compress=3: 파일 크기를 크게 줄여준다(위 max_depth 제한과 합쳐 722MB -> 9.2MB).
+    # 로드 시간은 압축 안 한 것보다 살짝 늘지만(0.13s -> 0.28s) 무시할 수준.
+    joblib.dump(clf, MODEL_PATH, compress=3)
 
-    meta = {"accuracy": float(acc), "n_estimators": 200, "classes": sorted(set(int(f) for f in y_fault_train))}
+    meta = {
+        "accuracy": float(acc),
+        "n_estimators": 150,
+        "max_depth": 18,
+        "classes": sorted(set(int(f) for f in y_fault_train)),
+    }
     with open(META_PATH, "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)
 
