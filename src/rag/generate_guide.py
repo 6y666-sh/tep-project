@@ -98,22 +98,18 @@ def generate_action_guide(fault_description: str, top_k: int = 5) -> dict:
     # 문제가 있었다. 각 문서마다 걸러야 그런 노이즈가 안 들어간다)
     confident = [(doc, score) for doc, score in all_retrieved if score <= DISTANCE_THRESHOLD]
 
-    low_confidence_notice = ""
     if confident:
         retrieved = confident
         confidence_level = "high"
     elif all_retrieved:
         # 임계치를 통과한 문서는 없지만 검색 결과 자체가 없는 건 아님 → 예전엔
         # 여기서 바로 재확인 메시지만 반환하고 아무것도 안 보여줬는데, 사용자
-        # 입장에서는 "낮은 신뢰도라도 참고할 초안"이 있는 게 완전히 빈 화면보다
-        # 낫다는 피드백을 받아 변경. 대신 신뢰도 낮음을 명확히 표시해서 반드시
-        # 사람이 다시 확인하도록 유도한다.
+        # 입장에서는 "참고할 초안"이 있는 게 완전히 빈 화면보다 낫다는 피드백을
+        # 받아 변경. 화면에 "신뢰도 낮음" 같은 문구는 따로 노출하지 않고, 검색된
+        # 지침을 근거로 최대한 생성한다 — 대신 confidence 필드는 내부 로그/DB용으로
+        # 계속 남겨서 나중에 품질 분석할 때 구분할 수 있게 한다.
         retrieved = all_retrieved[:3]
         confidence_level = "low"
-        low_confidence_notice = (
-            "⚠️ 검색된 지침의 관련성이 낮습니다(임계값 미달). 아래는 참고용 초안이니 "
-            "실제 조치 전 반드시 수동으로 재확인하세요.\n\n"
-        )
     else:
         # 검색 결과 자체가 없는 경우(벡터DB에 관련 문서가 전혀 없음)만 완전히 빈 상태로 반환
         return {
@@ -164,7 +160,7 @@ def generate_action_guide(fault_description: str, top_k: int = 5) -> dict:
         messages=[{"role": "user", "content": prompt}],
         temperature=0.2,  # 안전 지침 생성이라 창의성보다 일관성·정확성을 우선
     )
-    guide_text = low_confidence_notice + response.choices[0].message.content
+    guide_text = response.choices[0].message.content
 
     return {
         "guide_text": guide_text,

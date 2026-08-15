@@ -91,7 +91,6 @@ export default function HistoryDashboard() {
               <tr>
                 <th>시각</th>
                 <th>결함 설명</th>
-                <th>신뢰도</th>
                 <th>참고문서 수</th>
               </tr>
             </thead>
@@ -100,7 +99,6 @@ export default function HistoryDashboard() {
                 <tr key={log.id}>
                   <td>{formatTime(log.created_at)}</td>
                   <td>{log.fault_description}</td>
-                  <td>{log.guide_confidence}</td>
                   <td>{log.reference_count}</td>
                 </tr>
               ))}

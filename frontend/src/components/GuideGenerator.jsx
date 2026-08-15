@@ -58,9 +58,6 @@ export default function GuideGenerator() {
 
       {result && (
         <div className="result-card">
-          <div className={`badge ${result.confidence === "high" ? "badge-ok" : "badge-warn"}`}>
-            신뢰도: {result.confidence === "high" ? "높음" : "낮음"}
-          </div>
           <pre className="guide-text">{result.guide_text}</pre>
 
           {result.reference_docs.length > 0 && (
