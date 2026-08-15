@@ -1,0 +1,53 @@
+# AWS EC2 프리티어(t2.micro/t3.micro, RAM 1GB) 배포용 구성.
+# app(Dockerfile로 빌드) + mysql 컨테이너를 한 인스턴스 안에서 같이 띄운다.
+# RDS를 따로 안 쓰는 이유: 프리티어 리소스를 EC2/RDS 두 군데로 쪼개 쓰는 것보다,
+# 데모 프로젝트 규모에서는 한 인스턴스에 다 올리는 게 더 단순하고 관리 포인트도 적다.
+#
+# 실행법 (EC2 인스턴스에서, .env 파일을 이 파일과 같은 위치에 먼저 만들어두고):
+#   docker compose up -d --build
+# 로그 확인: docker compose logs -f app
+# 종료: docker compose down (MySQL 데이터는 볼륨에 남아있어서 다시 올리면 유지됨)
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    # RAM 1GB짜리 인스턴스에서 MySQL 기본 설정(innodb_buffer_pool_size 기본값이
+    # 꽤 큼)을 그대로 쓰면 앱 컨테이너가 뜰 메모리가 안 남는다. 버퍼풀/커넥션 수를
+    # 작게 제한해서 MySQL이 쓰는 메모리를 200MB 안팎으로 눌러둔다.
+    command: >
+      --innodb-buffer-pool-size=128M
+      --max-connections=40
+      --innodb-log-file-size=32M
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        # app이 시작 시점(모듈 import 때 create_all() 실행)에 바로 DB에 접속을
+        # 시도하기 때문에, MySQL이 "포트는 열렸지만 아직 초기화 중"인 상태에서
+        # app이 먼저 뜨면 접속 실패로 죽는다. healthcheck가 진짜 ping에 응답할
+        # 때까지 기다리게 해서 이 경쟁 상태를 막는다.
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql+mysqlconnector://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+    ports:
+      - "80:8000"
+
+volumes:
+  mysql_data:

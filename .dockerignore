@@ -1,0 +1,17 @@
+venv/
+__pycache__/
+*.pyc
+.git/
+.env
+tep_logs.db
+
+# 원본 데이터/원문 PDF는 배포 서버에 필요 없음 (이미 만들어진 결과물만 필요)
+data/raw/
+data/processed/
+docs/kosha_guides/
+notebooks/
+
+# 재학습 스크립트(retrain_from_feedback.py)가 덮어쓰기 전에 자동으로 만드는
+# 이전 모델 백업. 로컬에는 롤백용으로 남겨두지만, 배포 이미지에는 안 들어가도 됨
+# (용량이 원본 모델 크기만큼 커서 이미지만 불필요하게 커짐).
+models/archive/

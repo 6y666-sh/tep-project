@@ -1,0 +1,14 @@
+# railway up은 기본적으로 .gitignore를 따라서 업로드하는데, 그러면 models/,
+# vectorstore/가 통째로 빠진다(둘 다 .gitignore에 있음 - 깃엔 안 올리지만 배포엔
+# 필요한 파일들). 그래서 배포할 땐 --no-gitignore 옵션을 주고, 대신 이 파일로
+# "진짜 안 올려도 되는 것"만 따로 지정한다.
+
+venv/
+__pycache__/
+*.pyc
+.git/
+data/raw/
+data/processed/
+docs/kosha_guides/
+notebooks/
+tep_logs.db

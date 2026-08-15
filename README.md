@@ -29,4 +29,6 @@ tep-project/
 4. KOSHA 문서 → 벡터DB 구축 (`src/rag`)
 5. RAG 검색+생성 파이프라인 (`src/rag`)
 6. FastAPI 통합 서빙 (`src/api`)
-7. 하네스 판단 로직 고도화 (`src/orchestration`)
+7. 하네스 판단 로직 (`src/orchestration/harness.py`) — 이상 감지 시 confidence
+   게이트 + 중복(쿨다운) 판단을 거쳐 조치가이드를 자동 생성/재사용하고, 이상
+   로그와 연결한다. `/anomaly-check`에서 BackgroundTasks로 비동기 호출.
